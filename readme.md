@@ -1,23 +1,23 @@
-A production-grade authentication and session management service — the auth backbone for a URL Shortener platform — built to be extracted and reused as a standalone microservice.
+A production-grade authentication and session management service - the auth backbone for a URL Shortener platform - built to be extracted and reused as a standalone microservice.
 
 This service handles everything that happens before a user touches your product: registration, login, Google OAuth, email verification, token refresh, and session revocation. It was designed to be correct by default, not just functional.
 
 
 ## Technical Highlights
 
-- **Hashed refresh tokens with device-level session isolation** — the raw refresh token is never stored; only a `SHA-256` hash is persisted in the `sessions` table. Each device gets its own revokable session, enabling logout-from-all-devices and individual session revocation without invalidating others.
+- **Hashed refresh tokens with device-level session isolation** - the raw refresh token is never stored, only a `SHA-256` hash is persisted in the `sessions` table. Each device gets its own revokable session, enabling logout-from-all-devices and individual session revocation without invalidating others.
 
-- **Dual-client token delivery** — web clients receive refresh tokens via `HttpOnly; Secure; SameSite=Lax` cookies (XSS-resistant); mobile clients receive them in the response body. The distinction is enforced via an `X-Client-Type` request header, not a config flag.
+- **Dual-client token delivery** - web clients receive refresh tokens via `HttpOnly; Secure; SameSite=Lax` cookies (XSS-resistant), mobile clients receive them in the response body. The distinction is enforced via an `X-Client-Type` request header, not a config flag.
 
-- **Google OAuth handled server-side** — the frontend never touches the Google token exchange. The client passes a Google ID token; the server validates it against Google's public certs using `google-auth-library`, then upserts a `user_auth` record under the `GOOGLE` provider. A user with the same email on both `EMAIL` and `GOOGLE` providers gets separate `user_auth` rows linked to a single `users` row — no silent account merging.
+- **Google OAuth handled server-side** - the frontend never touches the Google token exchange. The client passes a Google ID token, the server validates it against Google's public certs using `google-auth-library`, then upserts a `user_auth` record under the `GOOGLE` provider. A user with the same email on both `EMAIL` and `GOOGLE` providers gets separate `user_auth` rows linked to a single `users` row - no silent account merging.
 
-- **Email delivery decoupled via BullMQ** — verification emails and password-reset emails are dispatched as background jobs through a Redis-backed BullMQ queue with exponential backoff and a dead-letter queue. The HTTP response returns before the email is sent, keeping p99 latency unaffected by AWS SES latency.
+- **Email delivery decoupled via BullMQ** - verification emails and password-reset emails are dispatched as background jobs through a Redis-backed BullMQ queue with exponential backoff and a dead-letter queue. The HTTP response returns before the email is sent, keeping p99 latency unaffected by AWS SES latency.
 
-- **Full observability out of the box** — structured JSON logs via Pino are shipped to Loki through Grafana Alloy, visualised in Grafana. OpenTelemetry tracing spans the full request lifecycle. The entire observability stack runs in Docker Compose alongside the app with zero external dependencies.
+- **Full observability out of the box** - structured JSON logs via Pino are shipped to Loki through Grafana Alloy, visualised in Grafana. OpenTelemetry tracing spans the full request lifecycle. The entire observability stack runs in Docker Compose alongside the app with zero external dependencies.
 
 ## Architecture
 
-The system is stateless at the application layer — every request carries a signed JWT, and the only mutable state lives in PostgreSQL (users, sessions, verification tokens) and Redis (job queue, cache). This means horizontal scaling requires no sticky sessions, and a full Redis flush doesn't lose user data.
+The system is stateless at the application layer - every request carries a signed JWT, and the only mutable state lives in PostgreSQL (users, sessions, verification tokens) and Redis (job queue, cache). This means horizontal scaling requires no sticky sessions, and a full Redis flush doesn't lose user data.
 
 ```
 Client (Web / Mobile)
@@ -93,7 +93,7 @@ Open `.env.local` and fill in the required values:
 | `POSTGRES_PASSWORD` | PostgreSQL password |
 | `POSTGRES_DB` | Database name |
 | `DATABASE_URL` | Full Prisma connection string, e.g. `postgresql://user:pass@postgres:5432/dbname` |
-| `DATABASE_URL_LOCALHOST` | Same but with `localhost` instead of `postgres` — used outside Docker |
+| `DATABASE_URL_LOCALHOST` | Same but with `localhost` instead of `postgres` - used outside Docker |
 | `JWT_SECRET` | Long random string for signing access tokens |
 | `JWT_EXPIRES_IN` | Access token TTL in seconds (e.g. `60`) |
 | `REFRESH_TOKEN_TTL_DAYS` | Refresh token lifetime in days (e.g. `7`) |
