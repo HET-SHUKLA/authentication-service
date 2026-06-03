@@ -1,4 +1,4 @@
-A production-grade authentication and session management service - the auth backbone for a URL Shortener platform - built to be extracted and reused as a standalone microservice.
+A production-grade authentication and session management service - built to be extracted and reused as a standalone microservice.
 
 This service handles everything that happens before a user touches your product: registration, login, Google OAuth, email verification, token refresh, and session revocation. It was designed to be correct by default, not just functional.
 
